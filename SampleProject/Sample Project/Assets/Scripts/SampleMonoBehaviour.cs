@@ -9,7 +9,8 @@ public class SampleMonoBehaviour : MonoBehaviour
         var subInstance = new SampleSubclass();
         UnityEngine.Debug.LogWarning(subInstance.SampleMethod());
         UnityEngine.Debug.LogWarning(subInstance.NonvirtualMethod());
-        
+        UnityEngine.Debug.LogWarning(SampleSubclass.SampleClassMethod(null, default(int)));
+
         var genericsInstance = new SampleGenericsClass<SampleSubclass>();
         UnityEngine.Debug.LogWarning(genericsInstance.SampleGenericsMethod(new Doge()));
     }
