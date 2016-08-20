@@ -5,6 +5,12 @@ using System.Text;
 
 namespace Assets.Scripts
 {
+    class SampleSimpleClass
+    {
+        public int VT;
+        public string RT;
+    }
+
     abstract class SampleBase
     {
         public static string ClassFieldSample = @"Miaow!";
