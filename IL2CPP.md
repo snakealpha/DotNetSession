@@ -4,9 +4,9 @@
 
 对这个目录进行观察，可见里面的文件数量还是相当之多的，毕竟标准库与Unity库同样通过IL2CPP进行了编译。
 
-## 结构
-
 和大多数C++的常见写法一样，类型的定义被放置在.h文件中，而函数和方法被放置在.cpp文件中。
+
+### 字段
 
 以下为范例工程生成的C++代码的一部分，包含了SampleBase类的字段定义。
 ``` cpp
@@ -50,6 +50,8 @@ ____
 1. .h文件中不包含任何方法的定义。稍后我们会看到在对应的cpp文件中定义的方法内容；
 2. 实例字段和静态字段被区分为两个不同的结构处理。对应于之前.Net部分介绍的内容，实例构造函数(.ctor)被用于初始化实例字段的内容，而类构造函数(.cctor)被用于构造静态字段。
 
+### 方法
+
 .cpp文件中的方法的一个例子如下：
 
 ```cpp
@@ -77,6 +79,8 @@ extern "C"  String_t* SampleSubclass_NonvirtualMethod_m1104769664 (SampleSubclas
 1. 没有实例方法。这或许是为了生成器结构简单采取的权衡；
 2. 方法作为C方法导出；
 3. 方法的头两个参数为this指针和MethodInfo指针。对于静态方法，this指针同样存在，只不过该值始终会被传入NULL；MethodInfo指向方法的元数据，当调用虚方法时，这个参数会被用到。
+
+### C# vs IL vs C++
 
 下面再来稍微看下各个不同阶段中代码的对应关系。首先是一个C#方法：
 ```csharp
@@ -182,3 +186,130 @@ IL_001f:
 il2cpp把生成的C++代码分解成了几个块。对比IL我们知道，每个控制流的分支都被追加了单独的标签用于跳转之用，而稍微看下代码的含义的话，每个块中的C++代码和相应行号的IL代码做的事甚至是完全一样的。
 
 IL2CPP的做法是针对每条IL指令将其参数带入模版以生成C++代码。嗯，证据确凿。
+
+### 异常
+这样一段IL代码
+```il
+    .try
+    {
+
+      IL_0042: br           IL_0069
+
+    // [30 11 - 30 46]
+      IL_0047: ldloca.s     V_4
+      IL_0049: call         instance !0/*string*/ valuetype [mscorlib]System.Collections.Generic.List`1/Enumerator<string>::get_Current()
+      IL_004e: stloc.3      // current
+
+    // [31 11 - 31 41]
+      IL_004f: ldloca.s     num
+      IL_0051: call         instance string [mscorlib]System.Int32::ToString()
+      IL_0056: ldloc.3      // current
+      IL_0057: call         bool [mscorlib]System.String::op_Equality(string, string)
+      IL_005c: brfalse      IL_0069
+
+    // [32 13 - 32 28]
+      IL_0061: ldloc.3      // current
+      IL_0062: stloc.s      V_5
+
+      IL_0064: leave        IL_008d
+
+    // [28 9 - 28 38]
+      IL_0069: ldloca.s     V_4
+      IL_006b: call         instance bool valuetype [mscorlib]System.Collections.Generic.List`1/Enumerator<string>::MoveNext()
+      IL_0070: brtrue       IL_0047
+      IL_0075: leave        IL_0087
+    } // end of .try
+    finally
+    {
+      IL_007a: ldloc.s      V_4
+      IL_007c: box          valuetype [mscorlib]System.Collections.Generic.List`1/Enumerator<string>
+      IL_0081: callvirt     instance void [mscorlib]System.IDisposable::Dispose()
+      IL_0086: endfinally   
+    } // end of finally
+```
+
+转换成C++之后是这样的：
+```cpp
+IL_0042:
+	try
+	{ // begin try (depth: 1)
+		{
+			goto IL_0069;
+		}
+
+IL_0047:
+		{
+			String_t* L_9 = Enumerator_get_Current_m870713862((&V_4), /*hidden argument*/Enumerator_get_Current_m870713862_MethodInfo_var);
+			V_3 = L_9;
+			String_t* L_10 = Int32_ToString_m2960866144((&V_2), /*hidden argument*/NULL);
+			String_t* L_11 = V_3;
+			IL2CPP_RUNTIME_CLASS_INIT(String_t_il2cpp_TypeInfo_var);
+			bool L_12 = String_op_Equality_m1790663636(NULL /*static, unused*/, L_10, L_11, /*hidden argument*/NULL);
+			if (!L_12)
+			{
+				goto IL_0069;
+			}
+		}
+
+IL_0061:
+		{
+			String_t* L_13 = V_3;
+			V_5 = L_13;
+			IL2CPP_LEAVE(0x8D, FINALLY_007a);
+		}
+
+IL_0069:
+		{
+			bool L_14 = Enumerator_MoveNext_m4175023932((&V_4), /*hidden argument*/Enumerator_MoveNext_m4175023932_MethodInfo_var);
+			if (L_14)
+			{
+				goto IL_0047;
+			}
+		}
+
+IL_0075:
+		{
+			IL2CPP_LEAVE(0x87, FINALLY_007a);
+		}
+	} // end try (depth: 1)
+	catch(Il2CppExceptionWrapper& e)
+	{
+		__last_unhandled_exception = (Exception_t1927440687 *)e.ex;
+		goto FINALLY_007a;
+	}
+```
+____
+鉴于与主旨关系不大，我们忽略FINALLY_007a代码块。重要的事情是：il的.try块和C++的try实现大不一样。对于il的.try块来说，只有当异常发生时，代码被跳转到SEH块按照异常对象的类型检索处理代码时才会带来性能减损；对于C++来说，诚然诸多先进编译器都是用类似的方法来减小异常的花销，然而你不能保证你的代码最终会通过这些现代编译器被编译。
+
+别忘了Unity自己就是积年累月不更新编译器的现行犯。
+
+### 接口和虚方法
+IL2CPP生成的接口方法调用类似于下面：
+
+    InterfaceFuncInvoker0< Il2CppObject* >::Invoke(0, IEnumerable_1_t2364004493_il2cpp_TypeInfo_var, L_0);
+
+虚方法和接口调用方式差不多，都是通过类似方法进行。方法的定义可以从下列文件中找到：
+
+```
+GeneratedGenericInterfaceInvokers.cpp
+GeneratedGenericVirtualInvokers.cpp
+GeneratedInterfaceInvokers.cpp
+GeneratedVirtualInvokers.cpp
+```
+其内容类似这样：
+
+```cpp
+template <typename R>
+struct VirtFuncInvoker0
+{
+	typedef R (*Func)(void*, const MethodInfo*);
+
+	static inline R Invoke (Il2CppMethodSlot slot, void* obj)
+	{
+		VirtualInvokeData invokeData;
+		il2cpp::vm::Runtime::GetVirtualInvokeData (slot, obj, &invokeData);
+		return ((Func)invokeData.methodPtr)(obj, invokeData.method);
+	}
+};
+```
+其中GetVirtualInvokeData被用于从方法表搜寻正确方法。
