@@ -55,6 +55,31 @@ namespace Assets.Scripts
         {
             return @"Nonvirtual Method";
         }
+
+        public void SimpleControlFlow()
+        {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i != 10; i++)
+            {
+                builder.Append(i.ToString());
+            }
+        }
+
+        IEnumerable<int> ForeachSampleEnumerator()
+        {
+            yield return 1;
+            yield return 2;
+            yield return 3;
+            yield break;
+        }
+
+        public void ForeachSample()
+        {
+            foreach (var value in ForeachSampleEnumerator())
+            {
+                // do something.
+            }
+        }
     }
 
     class SampleGenericsClass<T> where T : SampleBase
