@@ -43,7 +43,7 @@ public:
 	}
 };
 ```
-____
+
 
 有一下两点值得注意：
 
@@ -73,7 +73,7 @@ extern "C"  String_t* SampleSubclass_NonvirtualMethod_m1104769664 (SampleSubclas
 }
 
 ```
-"
+
 
 这匪夷所思的代码开头，il2cpp好心地留下了一行注释来标注生成的代码对应的托管方法的名字。简单地总结一下il2cpp生成方法的特征，大致如下：
 1. 没有实例方法。这或许是为了生成器结构简单采取的权衡；
@@ -109,7 +109,7 @@ extern "C"  String_t* SampleSubclass_NonvirtualMethod_m1104769664 (SampleSubclas
     IL_0005: stloc.0      // stringBuilder
 
     // [51 12 - 51 25]
-    IL_0006: ldc.i4.0     
+    IL_0006: ldc.i4.0
     IL_0007: stloc.1      // index
 
     IL_0008: br           IL_001f
@@ -119,19 +119,19 @@ extern "C"  String_t* SampleSubclass_NonvirtualMethod_m1104769664 (SampleSubclas
     IL_000e: ldloca.s     index
     IL_0010: call         instance string [mscorlib]System.Int32::ToString()
     IL_0015: callvirt     instance class [mscorlib]System.Text.StringBuilder [mscorlib]System.Text.StringBuilder::Append(string)
-    IL_001a: pop          
+    IL_001a: pop
 
     // [51 40 - 51 47]
     IL_001b: ldloc.1      // index
-    IL_001c: ldc.i4.1     
-    IL_001d: add          
+    IL_001c: ldc.i4.1
+    IL_001d: add
     IL_001e: stloc.1      // index
 
     // [51 27 - 51 38]
     IL_001f: ldloc.1      // index
     IL_0020: ldc.i4.s     10 // 0x0a
     IL_0022: bne.un       IL_000d
-    IL_0027: ret          
+    IL_0027: ret
 
   } // end of method SampleSubclass::SimpleControlFlow
 
@@ -182,7 +182,7 @@ IL_001f:
 	}
 }
 ```
-"
+
 il2cpp把生成的C++代码分解成了几个块。对比IL我们知道，每个控制流的分支都被追加了单独的标签用于跳转之用，而稍微看下代码的含义的话，每个块中的C++代码和相应行号的IL代码做的事甚至是完全一样的。
 
 IL2CPP的做法是针对每条IL指令将其参数带入模版以生成C++代码。嗯，证据确凿。
@@ -224,7 +224,7 @@ IL2CPP的做法是针对每条IL指令将其参数带入模版以生成C++代码
       IL_007a: ldloc.s      V_4
       IL_007c: box          valuetype [mscorlib]System.Collections.Generic.List`1/Enumerator<string>
       IL_0081: callvirt     instance void [mscorlib]System.IDisposable::Dispose()
-      IL_0086: endfinally   
+      IL_0086: endfinally
     } // end of finally
 ```
 
@@ -278,7 +278,7 @@ IL_0075:
 		goto FINALLY_007a;
 	}
 ```
-____
+
 鉴于与主旨关系不大，我们忽略FINALLY_007a代码块。重要的事情是：il的.try块和C++的try实现大不一样。对于il的.try块来说，只有当异常发生时，代码被跳转到SEH块按照异常对象的类型检索处理代码时才会带来性能减损；对于C++来说，诚然诸多先进编译器都是用类似的方法来减小异常的花销，然而你不能保证你的代码最终会通过这些现代编译器被编译。
 
 别忘了Unity自己就是积年累月不更新编译器的现行犯。
