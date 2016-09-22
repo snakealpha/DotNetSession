@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Assets.Scripts
 {
@@ -13,6 +14,26 @@ namespace Assets.Scripts
 
         public bool GenericMethod<T>(T? argu) where T : struct
         {
+            List<int> collection = new List<int>();
+            collection.Add(1);
+            collection.Add(1);
+            collection.Add(1);
+            collection.Add(1);
+            collection.Add(1);
+            collection.Add(1);
+
+            foreach (var item in collection)
+            {
+                // ...do something
+            }
+
+            var enumerator = collection.GetEnumerator();
+            for (; enumerator.MoveNext();)
+            {
+                // ...do something
+            }
+            enumerator.Dispose();
+
             return argu != null;
         }
     }
