@@ -32,7 +32,7 @@ namespace ConsoleApplication1
             {
             };
 
-            deleFunc(dele);
+            //deleFunc(dele);
         }
 
         static void RunBoxMethod()
@@ -133,7 +133,7 @@ namespace ConsoleApplication1
         protected override void DoSomething()
         {
             base.DoSomething();
-            System.Diagnostics.Debug.Assert(Text != null);
+            System.Diagnostics.Debug.Assert(Text != null);  // EXCEPTION!!!
         }
 
         public SubClass():base()
